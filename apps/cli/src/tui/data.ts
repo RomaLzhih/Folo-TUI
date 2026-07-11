@@ -176,8 +176,17 @@ interface TranslationBatchRequest {
   mode: "bilingual" | "translation-only"
 }
 
+interface SummaryRequest {
+  id: string
+  language: string
+  target: "content" | "readabilityContent"
+}
+
 interface AiApi {
-  ai: { translationBatch: (request: TranslationBatchRequest) => Promise<Response> }
+  ai: {
+    translationBatch: (request: TranslationBatchRequest) => Promise<Response>
+    summary: (request: SummaryRequest) => Promise<{ data?: string | null }>
+  }
 }
 
 const readNdjson = async (response: Response, onLine: (value: unknown) => void): Promise<void> => {
@@ -249,4 +258,22 @@ export const fetchTranslation = async (
     }
   })
   return html
+}
+
+/**
+ * Fetch an AI-generated summary of an entry in the target language (Chinese by
+ * default). Like translation, the summary must target the field that is shown:
+ * `readabilityContent` in reader mode, `content` otherwise. Returns plain text,
+ * or an empty string when unavailable (e.g. the plan lacks AI summaries).
+ */
+export const fetchSummary = async (
+  client: FollowClient,
+  entryId: string,
+  target: TranslationTarget = "readabilityContent",
+  language = "zh-CN",
+): Promise<string> => {
+  const aiApi = client.api as unknown as AiApi
+  const response = await aiApi.ai.summary({ id: entryId, language, target })
+  const { data } = asRecord(response)
+  return typeof data === "string" ? data.trim() : ""
 }

@@ -11,6 +11,7 @@ import {
   fetchEntries,
   fetchReadable,
   fetchSubscriptions,
+  fetchSummary,
   fetchTranslation,
   markEntryRead,
   markEntryUnread,
@@ -60,6 +61,10 @@ export const App = ({ client }: AppProps) => {
   const [translatedText, setTranslatedText] = useState<string | null>(null)
   const [translationLoading, setTranslationLoading] = useState(false)
 
+  // AI summary (Chinese) shown at the top of the reader.
+  const [summaryText, setSummaryText] = useState<string | null>(null)
+  const [summaryLoading, setSummaryLoading] = useState(false)
+
   const [pane, setPane] = useState<PaneName>("feeds")
   const [message, setMessage] = useState<string | undefined>()
   const [showHelp, setShowHelp] = useState(false)
@@ -80,6 +85,10 @@ export const App = ({ client }: AppProps) => {
   const readerLines = useMemo(
     () => (activeReaderText ? wrapText(activeReaderText, readerInnerWidth) : []),
     [activeReaderText, readerInnerWidth],
+  )
+  const summaryLines = useMemo(
+    () => (summaryText ? wrapText(summaryText, readerInnerWidth) : []),
+    [summaryText, readerInnerWidth],
   )
 
   const loadEntriesFor = async (index: number, sidebar: SidebarRow[] = rows) => {
@@ -114,6 +123,14 @@ export const App = ({ client }: AppProps) => {
       .finally(() => setTranslationLoading(false))
   }
 
+  const loadSummary = (entry: EntryItem, target: TranslationTarget) => {
+    setSummaryLoading(true)
+    fetchSummary(client, entry.id, target)
+      .then((text) => setSummaryText(text))
+      .catch(() => setSummaryText(""))
+      .finally(() => setSummaryLoading(false))
+  }
+
   const openEntry = async (index: number, autoTranslate = false) => {
     const entry = entries[index]
     if (!entry) {
@@ -124,10 +141,12 @@ export const App = ({ client }: AppProps) => {
     setReaderScroll(0)
     setReaderText(null)
     setReaderLoading(true)
-    // Reset translation for the newly opened entry.
+    // Reset translation and summary for the newly opened entry.
     setTranslatedText(null)
     setTranslated(autoTranslate)
     setTranslationLoading(autoTranslate)
+    setSummaryText(null)
+    setSummaryLoading(true)
 
     if (!entry.read) {
       setEntries((current) =>
@@ -157,6 +176,8 @@ export const App = ({ client }: AppProps) => {
     if (autoTranslate) {
       loadTranslation(entry, target)
     }
+    // Always show the Chinese AI summary at the top of the reader.
+    loadSummary(entry, target)
   }
 
   const toggleTranslate = () => {
@@ -343,6 +364,8 @@ export const App = ({ client }: AppProps) => {
           fallback={readerFallback}
           translated={translated}
           translating={translationLoading}
+          summaryLines={summaryLines}
+          summaryLoading={summaryLoading}
           focused={pane === "reader"}
           width={readerWidth}
           height={paneHeight}

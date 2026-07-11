@@ -11,6 +11,8 @@ interface ReaderProps {
   fallback: boolean
   translated: boolean
   translating: boolean
+  summaryLines: string[]
+  summaryLoading: boolean
   focused: boolean
   width: number
   height: number
@@ -24,6 +26,8 @@ export const Reader = ({
   fallback,
   translated,
   translating,
+  summaryLines,
+  summaryLoading,
   focused,
   width,
   height,
@@ -48,7 +52,32 @@ export const Reader = ({
     </Box>
   ) : null
 
-  const bodyHeight = Math.max(1, height - (entry ? 5 : 1))
+  // AI summary block, pinned at the top of the article. Cap its lines so it
+  // never crowds out the body; the body height shrinks by the block's height so
+  // total output stays within the pane (avoids overflow → flicker).
+  const maxSummary = Math.max(2, Math.floor((height - 6) / 2))
+  const shownSummary = summaryLoading ? [] : summaryLines.slice(0, maxSummary)
+  const hasSummary = summaryLoading || shownSummary.length > 0
+  const summaryBlockHeight = hasSummary ? 1 + (summaryLoading ? 1 : shownSummary.length) + 1 : 0
+
+  const summary = hasSummary ? (
+    <Box flexDirection="column" marginBottom={1}>
+      <Text bold color="green" wrap="truncate-end">
+        AI 摘要 (中文)
+      </Text>
+      {summaryLoading ? (
+        <Text dimColor>生成摘要中…</Text>
+      ) : (
+        shownSummary.map((line, index) => (
+          <Text key={index} color="green" wrap="truncate-end">
+            {line || " "}
+          </Text>
+        ))
+      )}
+    </Box>
+  ) : null
+
+  const bodyHeight = Math.max(1, height - (entry ? 5 : 1) - summaryBlockHeight)
   const body = lines.slice(scroll, scroll + bodyHeight)
   const hasMore = scroll + bodyHeight < lines.length
 
@@ -73,6 +102,7 @@ export const Reader = ({
       ) : (
         <>
           {header}
+          {summary}
           {translated && translating ? (
             <Text dimColor>Translating to Chinese…</Text>
           ) : translated && body.length === 0 ? (
