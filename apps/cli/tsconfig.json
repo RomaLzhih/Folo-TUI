@@ -6,7 +6,9 @@
     "lib": ["ES2022"],
     "moduleResolution": "Bundler",
     "types": ["node"],
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
     "noEmit": true
   },
-  "include": ["src/**/*.ts", "tsup.config.ts"]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "tsup.config.ts"]
 }

@@ -12,6 +12,7 @@ import { registerOPMLCommand } from "./commands/opml"
 import { registerSearchCommand } from "./commands/search"
 import { registerSubscriptionCommand } from "./commands/subscription"
 import { registerTimelineCommand } from "./commands/timeline"
+import { registerTuiCommand } from "./commands/tui"
 import { registerUnreadCommand } from "./commands/unread"
 import type { OutputFormat } from "./output"
 import { normalizeError, printFailure } from "./output"
@@ -37,6 +38,7 @@ registerSearchCommand(program)
 registerCollectionCommand(program)
 registerOPMLCommand(program)
 registerUnreadCommand(program)
+registerTuiCommand(program)
 
 const resolveRequestedFormat = (argv: string[]): OutputFormat => {
   for (let index = 0; index < argv.length; index += 1) {
