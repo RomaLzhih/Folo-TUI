@@ -9,8 +9,8 @@ interface StatusBarProps {
 
 const HINTS: Record<PaneName, string> = {
   feeds: "↑↓ move · Enter/→ open feed · ? help · q quit",
-  entries: "↑↓ move · Enter/→ read · t translate · r read · ← feeds · q quit",
-  reader: "↑↓ scroll · t translate · r read · ← back · q quit",
+  entries: "↑↓ move · Enter/→ read · t translate · o open · r read · ← feeds · q quit",
+  reader: "↑↓ scroll · t translate · o open in browser · r read · ← back · q quit",
 }
 
 export const StatusBar = ({ pane, message }: StatusBarProps) => (

@@ -16,6 +16,7 @@ import {
   markEntryUnread,
 } from "./data"
 import { htmlToText, wrapText } from "./format"
+import { openUrl } from "./openUrl"
 import type { SidebarRow } from "./sidebar"
 import { buildSidebar, rowToQuery } from "./sidebar"
 import { useTerminalSize } from "./useTerminalSize"
@@ -259,6 +260,16 @@ export const App = ({ client }: AppProps) => {
       return
     }
 
+    if (input === "o") {
+      const target = pane === "reader" ? activeEntry : (entries[entrySel] ?? null)
+      if (openUrl(target?.url)) {
+        setMessage("Opened link in browser.")
+      } else {
+        setMessage("No link to open for this entry.")
+      }
+      return
+    }
+
     if (pane === "feeds") {
       if (up) {
         setSidebarSel((value) => clamp(value - 1, 0, rows.length - 1))
@@ -369,6 +380,9 @@ const HelpScreen = ({ height }: { height: number }) => (
     </Text>
     <Text>
       <Text color="yellow">t </Text> Translate to Chinese (bilingual: original + 中文)
+    </Text>
+    <Text>
+      <Text color="yellow">o </Text> Open the post link in your default browser
     </Text>
     <Text>
       <Text color="yellow">r </Text> Toggle read / unread
