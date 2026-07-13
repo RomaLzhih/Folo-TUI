@@ -358,7 +358,7 @@ export const App = ({ client }: AppProps) => {
     } else if (key.pageDown || input === " ") {
       const maxScroll = Math.max(0, readerLines.length - readerBodyHeight)
       setReaderScroll((value) => clamp(value + readerBodyHeight, 0, maxScroll))
-    } else if (key.pageUp) {
+    } else if (key.pageUp || input === "-") {
       setReaderScroll((value) => clamp(value - readerBodyHeight, 0, readerLines.length))
     } else if (back) {
       setPane("entries")
@@ -434,6 +434,9 @@ const HelpScreen = ({ height }: { height: number }) => (
     </Text>
     <Text>
       <Text color="yellow">Space / PgDn</Text> Page down in the reader
+    </Text>
+    <Text>
+      <Text color="yellow">- / PgUp </Text> Page up in the reader
     </Text>
     <Text>
       <Text color="yellow">t </Text> Translate to Chinese (bilingual: original + 中文)

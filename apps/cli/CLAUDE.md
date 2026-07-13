@@ -29,8 +29,8 @@ Guidance for working on `apps/cli`, especially the interactive TUI. The root
   - `tui/openUrl.ts` — open a link in the OS default browser
   - `tui/useTerminalSize.ts`
 - Keys: `↑↓`/`jk` move · `Enter`/`→` open · `←`/`Esc` back · `Space`/`PgDn`
-  page · `t` translate · `o` open in browser · `r` toggle read · `R` refresh
-  entries · `?` help · `q` quit.
+  page down · `-`/`PgUp` page up · `t` translate · `o` open in browser · `r`
+  toggle read · `R` refresh entries · `?` help · `q` quit.
 
 ## Non-obvious decisions & gotchas (read before changing the TUI)
 
