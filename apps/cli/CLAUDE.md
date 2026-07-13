@@ -34,6 +34,9 @@ Guidance for working on `apps/cli`, especially the interactive TUI. The root
 - Auto-read: moving the entry-list cursor off an entry marks the one you left
   read (mark-on-leave), so browsing clears unread without opening posts. Shared
   `markRead` helper in `App.tsx` also backs open-to-read and unread toggling.
+- Refresh (`R`) re-sorts the list unread-first via `unreadFirst`, floating read
+  entries to the bottom; it merges in locally-marked reads so a lagging server
+  can't resurface them on top.
 
 ## Non-obvious decisions & gotchas (read before changing the TUI)
 

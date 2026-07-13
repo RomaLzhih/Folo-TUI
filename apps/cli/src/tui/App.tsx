@@ -31,6 +31,13 @@ interface AppProps {
 const clamp = (value: number, min: number, max: number): number =>
   Math.min(Math.max(value, min), max)
 
+// Stable partition: unread entries keep their order on top, read ones sink
+// below (preserving their relative order). Used to re-sort on refresh.
+const unreadFirst = (items: EntryItem[]): EntryItem[] => [
+  ...items.filter((item) => !item.read),
+  ...items.filter((item) => item.read),
+]
+
 const errorMessage = (error: unknown): string => {
   const raw = error instanceof Error ? error.message : "Something went wrong"
   // API errors can be verbose and multi-line; keep the status bar to one line.
@@ -131,8 +138,15 @@ export const App = ({ client }: AppProps) => {
     setMessage(undefined)
     try {
       const next = await fetchEntries(client, rowToQuery(row))
-      setEntries(next)
-      setEntrySel((value) => clamp(value, 0, Math.max(0, next.length - 1)))
+      // Carry over reads we marked locally in case the server hasn't yet caught
+      // up with the fire-and-forget mark-read calls, then float unread to top.
+      const readIds = new Set(entries.filter((item) => item.read).map((item) => item.id))
+      const merged = next.map((item) =>
+        item.read || readIds.has(item.id) ? { ...item, read: true } : item,
+      )
+      const sorted = unreadFirst(merged)
+      setEntries(sorted)
+      setEntrySel((value) => clamp(value, 0, Math.max(0, sorted.length - 1)))
       setMessage("Entries refreshed.")
     } catch (error) {
       setMessage(errorMessage(error))
