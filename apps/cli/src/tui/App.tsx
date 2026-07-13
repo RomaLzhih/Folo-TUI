@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 
 import { EntryList } from "./components/EntryList"
 import { FeedList } from "./components/FeedList"
-import { Reader } from "./components/Reader"
+import { computeReaderLayout, Reader } from "./components/Reader"
 import { StatusBar } from "./components/StatusBar"
 import type { EntryItem, TranslationTarget } from "./data"
 import {
@@ -78,7 +78,6 @@ export const App = ({ client }: AppProps) => {
   // plus the status bar row, must stay < termRows.
   const paneHeight = Math.max(6, termRows - 4)
   const readerInnerWidth = Math.max(8, readerWidth - 4)
-  const readerBodyHeight = Math.max(1, paneHeight - 5)
 
   // Show the translated (bilingual) text when translation is toggled on.
   const activeReaderText = translated ? translatedText : readerText
@@ -89,6 +88,16 @@ export const App = ({ client }: AppProps) => {
   const summaryLines = useMemo(
     () => (summaryText ? wrapText(summaryText, readerInnerWidth) : []),
     [summaryText, readerInnerWidth],
+  )
+
+  // Paging/scroll must step by the reader's *visible* body height, which shrinks
+  // when the AI summary is pinned on top. Derive it from the same helper the
+  // Reader uses so Space/PgDn never skip the lines behind the summary block.
+  const { bodyHeight: readerBodyHeight } = computeReaderLayout(
+    paneHeight,
+    Boolean(activeEntry),
+    summaryLines,
+    summaryLoading,
   )
 
   const loadEntriesFor = async (index: number, sidebar: SidebarRow[] = rows) => {

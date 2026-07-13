@@ -18,6 +18,36 @@ interface ReaderProps {
   height: number
 }
 
+export interface ReaderLayout {
+  /** Max summary lines to show before the block is capped. */
+  maxSummary: number
+  /** Rows the pinned AI-summary block occupies (0 when absent). */
+  summaryBlockHeight: number
+  /** Rows left for the article body once header + summary are subtracted. */
+  bodyHeight: number
+}
+
+// Vertical layout of the reader pane. The AI summary is pinned above the body,
+// so the body shrinks by the summary block's height. App and Reader MUST derive
+// their body height from this same function — otherwise the pane's paging math
+// (in App) and the visible body (here) disagree and Space/PgDn skip the lines
+// hidden behind the summary.
+export const computeReaderLayout = (
+  height: number,
+  hasEntry: boolean,
+  summaryLines: string[],
+  summaryLoading: boolean,
+): ReaderLayout => {
+  // Cap the summary so it never crowds out the body.
+  const maxSummary = Math.max(2, Math.floor((height - 6) / 2))
+  const shownSummary = summaryLoading ? 0 : Math.min(summaryLines.length, maxSummary)
+  const hasSummary = summaryLoading || shownSummary > 0
+  // Block = 1 heading row + content rows (loading placeholder = 1) + 1 margin.
+  const summaryBlockHeight = hasSummary ? 1 + (summaryLoading ? 1 : shownSummary) + 1 : 0
+  const bodyHeight = Math.max(1, height - (hasEntry ? 5 : 1) - summaryBlockHeight)
+  return { maxSummary, summaryBlockHeight, bodyHeight }
+}
+
 export const Reader = ({
   entry,
   lines,
@@ -33,6 +63,12 @@ export const Reader = ({
   height,
 }: ReaderProps) => {
   const innerWidth = Math.max(8, width - 4)
+  const { maxSummary, bodyHeight } = computeReaderLayout(
+    height,
+    Boolean(entry),
+    summaryLines,
+    summaryLoading,
+  )
 
   const header = entry ? (
     <Box flexDirection="column" marginBottom={1}>
@@ -52,13 +88,10 @@ export const Reader = ({
     </Box>
   ) : null
 
-  // AI summary block, pinned at the top of the article. Cap its lines so it
-  // never crowds out the body; the body height shrinks by the block's height so
-  // total output stays within the pane (avoids overflow → flicker).
-  const maxSummary = Math.max(2, Math.floor((height - 6) / 2))
+  // AI summary block, pinned at the top of the article (layout via
+  // computeReaderLayout above so App's paging math stays in sync).
   const shownSummary = summaryLoading ? [] : summaryLines.slice(0, maxSummary)
   const hasSummary = summaryLoading || shownSummary.length > 0
-  const summaryBlockHeight = hasSummary ? 1 + (summaryLoading ? 1 : shownSummary.length) + 1 : 0
 
   const summary = hasSummary ? (
     <Box flexDirection="column" marginBottom={1}>
@@ -77,7 +110,6 @@ export const Reader = ({
     </Box>
   ) : null
 
-  const bodyHeight = Math.max(1, height - (entry ? 5 : 1) - summaryBlockHeight)
   const body = lines.slice(scroll, scroll + bodyHeight)
   const hasMore = scroll + bodyHeight < lines.length
 
