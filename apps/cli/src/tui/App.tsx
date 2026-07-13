@@ -121,6 +121,26 @@ export const App = ({ client }: AppProps) => {
     }
   }
 
+  // Re-fetch entries for the active feed without leaving the current pane.
+  const refreshEntries = async () => {
+    const row = rows[sidebarActive]
+    if (!row || entriesLoading) {
+      return
+    }
+    setEntriesLoading(true)
+    setMessage(undefined)
+    try {
+      const next = await fetchEntries(client, rowToQuery(row))
+      setEntries(next)
+      setEntrySel((value) => clamp(value, 0, Math.max(0, next.length - 1)))
+      setMessage("Entries refreshed.")
+    } catch (error) {
+      setMessage(errorMessage(error))
+    } finally {
+      setEntriesLoading(false)
+    }
+  }
+
   const loadTranslation = (entry: EntryItem, target: TranslationTarget) => {
     setTranslationLoading(true)
     fetchTranslation(client, entry.id, target)
@@ -280,6 +300,11 @@ export const App = ({ client }: AppProps) => {
       return
     }
 
+    if (input === "R") {
+      void refreshEntries()
+      return
+    }
+
     if (input === "t") {
       if (pane === "reader" && activeEntry) {
         toggleTranslate()
@@ -418,6 +443,9 @@ const HelpScreen = ({ height }: { height: number }) => (
     </Text>
     <Text>
       <Text color="yellow">r </Text> Toggle read / unread
+    </Text>
+    <Text>
+      <Text color="yellow">R </Text> Refresh entries for the current feed
     </Text>
     <Text>
       <Text color="yellow">? </Text> Toggle this help
