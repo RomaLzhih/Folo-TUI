@@ -160,6 +160,21 @@ export const App = ({ client }: AppProps) => {
       .finally(() => setSummaryLoading(false))
   }
 
+  // Mark one entry read (idempotent). Shared by opening an entry and by the
+  // entries-list cursor moving past one, so browsing clears unread on its own.
+  const markRead = (entry: EntryItem | null | undefined) => {
+    if (!entry || entry.read) {
+      return
+    }
+    setEntries((current) =>
+      current.map((item) => (item.id === entry.id ? { ...item, read: true } : item)),
+    )
+    setActiveEntry((current) =>
+      current && current.id === entry.id ? { ...current, read: true } : current,
+    )
+    markEntryRead(client, entry.id).catch(() => {})
+  }
+
   const openEntry = async (index: number, autoTranslate = false) => {
     const entry = entries[index]
     if (!entry) {
@@ -177,12 +192,7 @@ export const App = ({ client }: AppProps) => {
     setSummaryText(null)
     setSummaryLoading(true)
 
-    if (!entry.read) {
-      setEntries((current) =>
-        current.map((item) => (item.id === entry.id ? { ...item, read: true } : item)),
-      )
-      markEntryRead(client, entry.id).catch(() => {})
-    }
+    markRead(entry)
 
     // Translate the field that is actually shown: readability when available,
     // otherwise the raw content. Sequenced after the readable fetch so the
@@ -337,10 +347,13 @@ export const App = ({ client }: AppProps) => {
     }
 
     if (pane === "entries") {
-      if (up) {
-        setEntrySel((value) => clamp(value - 1, 0, Math.max(0, entries.length - 1)))
-      } else if (down) {
-        setEntrySel((value) => clamp(value + 1, 0, Math.max(0, entries.length - 1)))
+      if (up || down) {
+        const next = clamp(entrySel + (down ? 1 : -1), 0, Math.max(0, entries.length - 1))
+        if (next !== entrySel) {
+          // Auto-mark the entry we're leaving read as the cursor moves past it.
+          markRead(entries[entrySel])
+          setEntrySel(next)
+        }
       } else if (forward) {
         void openEntry(entrySel)
       } else if (back) {

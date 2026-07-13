@@ -31,6 +31,9 @@ Guidance for working on `apps/cli`, especially the interactive TUI. The root
 - Keys: `↑↓`/`jk` move · `Enter`/`→` open · `←`/`Esc` back · `Space`/`PgDn`
   page down · `-`/`PgUp` page up · `t` translate · `o` open in browser · `r`
   toggle read · `R` refresh entries · `?` help · `q` quit.
+- Auto-read: moving the entry-list cursor off an entry marks the one you left
+  read (mark-on-leave), so browsing clears unread without opening posts. Shared
+  `markRead` helper in `App.tsx` also backs open-to-read and unread toggling.
 
 ## Non-obvious decisions & gotchas (read before changing the TUI)
 
