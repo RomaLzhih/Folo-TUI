@@ -2,6 +2,7 @@ import { Box, Text } from "ink"
 
 import type { EntryItem } from "../data"
 import { relativeTime, truncate } from "../format"
+import { useTheme } from "../theme"
 
 interface ReaderProps {
   entry: EntryItem | null
@@ -62,6 +63,7 @@ export const Reader = ({
   width,
   height,
 }: ReaderProps) => {
+  const theme = useTheme()
   const innerWidth = Math.max(8, width - 4)
   const { maxSummary, bodyHeight } = computeReaderLayout(
     height,
@@ -72,16 +74,16 @@ export const Reader = ({
 
   const header = entry ? (
     <Box flexDirection="column" marginBottom={1}>
-      <Text bold color="cyan" wrap="truncate-end">
+      <Text bold color={theme.primary} wrap="truncate-end">
         {truncate(entry.title, innerWidth)}
       </Text>
-      <Text dimColor wrap="truncate-end">
+      <Text dimColor color={theme.text} wrap="truncate-end">
         {[entry.feedTitle, entry.author, relativeTime(entry.publishedAt)]
           .filter(Boolean)
           .join(" · ")}
       </Text>
       {entry.url ? (
-        <Text dimColor wrap="truncate-end">
+        <Text dimColor color={theme.text} wrap="truncate-end">
           {truncate(entry.url, innerWidth)}
         </Text>
       ) : null}
@@ -95,14 +97,16 @@ export const Reader = ({
 
   const summary = hasSummary ? (
     <Box flexDirection="column" marginBottom={1}>
-      <Text bold color="green" wrap="truncate-end">
+      <Text bold color={theme.summary} wrap="truncate-end">
         AI 摘要 (中文)
       </Text>
       {summaryLoading ? (
-        <Text dimColor>生成摘要中…</Text>
+        <Text dimColor color={theme.text}>
+          生成摘要中…
+        </Text>
       ) : (
         shownSummary.map((line, index) => (
-          <Text key={index} color="green" wrap="truncate-end">
+          <Text key={index} color={theme.summary} wrap="truncate-end">
             {line || " "}
           </Text>
         ))
@@ -119,36 +123,51 @@ export const Reader = ({
       width={width}
       height={height + 2}
       borderStyle="round"
-      borderColor={focused ? "cyan" : "gray"}
+      borderColor={focused ? theme.primary : theme.muted}
+      backgroundColor={theme.background}
       paddingX={1}
     >
-      <Text bold color={focused ? "cyan" : "gray"} wrap="truncate-end">
+      <Text bold color={focused ? theme.primary : theme.muted} wrap="truncate-end">
         Reader
         {translated ? "  · 中文对照 (bilingual)" : fallback && entry ? "  (original content)" : ""}
       </Text>
 
       {!entry ? (
-        <Text dimColor>Select an entry and press Enter to read.</Text>
+        <Text dimColor color={theme.text}>
+          Select an entry and press Enter to read.
+        </Text>
       ) : loading ? (
-        <Text dimColor>Loading article…</Text>
+        <Text dimColor color={theme.text}>
+          Loading article…
+        </Text>
       ) : (
         <>
           {header}
           {summary}
           {translated && translating ? (
-            <Text dimColor>Translating to Chinese…</Text>
+            <Text dimColor color={theme.text}>
+              Translating to Chinese…
+            </Text>
           ) : translated && body.length === 0 ? (
-            <Text dimColor>(translation unavailable — may require a paid plan)</Text>
+            <Text dimColor color={theme.text}>
+              (translation unavailable — may require a paid plan)
+            </Text>
           ) : body.length === 0 ? (
-            <Text dimColor>(no readable content)</Text>
+            <Text dimColor color={theme.text}>
+              (no readable content)
+            </Text>
           ) : (
             body.map((line, index) => (
-              <Text key={scroll + index} wrap="truncate-end">
+              <Text key={scroll + index} color={theme.text} wrap="truncate-end">
                 {line || " "}
               </Text>
             ))
           )}
-          {hasMore ? <Text dimColor>↓ more</Text> : null}
+          {hasMore ? (
+            <Text dimColor color={theme.text}>
+              ↓ more
+            </Text>
+          ) : null}
         </>
       )}
     </Box>

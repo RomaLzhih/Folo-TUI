@@ -1,6 +1,7 @@
 import type { Command } from "commander"
 
 import { createCommandContext } from "../client"
+import { readConfig, updateConfig } from "../config"
 import { CLIError, normalizeError } from "../output"
 import { runTui } from "../tui"
 
@@ -18,7 +19,14 @@ export const launchTui = async (command: Command): Promise<void> => {
 
   try {
     const context = await createCommandContext(command, true)
-    await runTui(context.client)
+    const config = await readConfig()
+    await runTui(context.client, {
+      initialTheme: config.theme ?? "dark",
+      // Persist the choice, but a failed write must never crash the reader.
+      onThemeChange: (theme) => {
+        void updateConfig({ theme }).catch(() => {})
+      },
+    })
   } catch (error) {
     const details = error instanceof CLIError ? error : normalizeError(error)
     console.error(`[${details.code}] ${details.message}`)

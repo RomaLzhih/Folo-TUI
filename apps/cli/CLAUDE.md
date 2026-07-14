@@ -26,11 +26,13 @@ Guidance for working on `apps/cli`, especially the interactive TUI. The root
   - `tui/sidebar.ts` — subscriptions → group/feed rows
   - `tui/format.ts` — HTML→text, display-width truncate/wrap, relative time
   - `tui/components/` — `FeedList`, `EntryList`, `Reader`, `StatusBar`
+  - `tui/theme.ts` — colorscheme roles + dark/light palettes, React context
   - `tui/openUrl.ts` — open a link in the OS default browser
   - `tui/useTerminalSize.ts`
 - Keys: `↑↓`/`jk` move · `Enter`/`→` open · `←`/`Esc` back · `Space`/`PgDn`
   page down · `-`/`PgUp` page up · `t` translate · `o` open in browser · `r`
-  toggle read · `R` refresh entries · `?` help · `q` quit.
+  toggle read · `R` refresh entries · `c` toggle colorscheme · `?` help · `q`
+  quit.
 - Auto-read: moving the entry-list cursor off an entry marks the one you left
   read (mark-on-leave), so browsing clears unread without opening posts. Shared
   `markRead` helper in `App.tsx` also backs open-to-read and unread toggling.
@@ -67,6 +69,26 @@ Guidance for working on `apps/cli`, especially the interactive TUI. The root
    normalizes every payload through unknown-safe readers (`asRecord`, `str`,
    `num`) into small explicit interfaces — avoids `any` and decouples the TUI
    from SDK type churn.
+6. **Colorscheme.** `theme.ts` defines semantic roles (accents `primary`/
+   `muted`/`secondary`/`summary` — formerly the hardcoded `cyan`/`gray`/
+   `yellow`/`green` — plus `text`/`background`) and dark/light palettes,
+   delivered via React context (`useTheme`), not props. `c` toggles it; the
+   choice persists to `config.json` (`theme` field) via the `onThemeChange`
+   callback threaded through `runTui`. Palettes use **hex, not ANSI names** —
+   names inherit each terminal's palette (inconsistent, often glaring); hex
+   renders the same everywhere and chalk downsamples on limited terminals.
+   **A TUI can't set the terminal's own window background**, so a real light
+   theme must *paint* the cells it draws: set `backgroundColor` on every pane
+   `Box` (an Ink Box bg fills its whole rectangle, behind child text too — the
+   emitted line is `ESC[48;2;r;g;bm …text… ESC[49m`) **and** set an explicit
+   dark `color={theme.text}` on all body/dim `<Text>`, else plain text inherits
+   the terminal's light default fg and turns invisible on the light bg. For the
+   dark theme `text`/`background` stay `undefined` (terminal default), so
+   `color={undefined}`/`backgroundColor={undefined}` is a no-op there. Painting
+   bg changes no heights, so the flicker invariants (#2) still hold. Test under
+   a PTY with `FORCE_COLOR=3` so chalk emits exact 24-bit codes (`48;2;…` fills,
+   `38;2;…` fg) to assert on, and re-check `ESC[2J` count stays 0 while
+   scrolling.
 
 ## Develop & test
 

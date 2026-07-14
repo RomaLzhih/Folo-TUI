@@ -6,6 +6,7 @@ import { join } from "pathe"
 export interface FoloCLIConfig {
   token?: string
   apiUrl?: string
+  theme?: "dark" | "light"
 }
 
 const configDir = join(homedir(), ".folo")
@@ -20,6 +21,7 @@ const normalizeConfig = (config: unknown): FoloCLIConfig => {
   return {
     token: typeof source.token === "string" ? source.token : undefined,
     apiUrl: typeof source.apiUrl === "string" ? source.apiUrl : undefined,
+    theme: source.theme === "dark" || source.theme === "light" ? source.theme : undefined,
   }
 }
 
@@ -60,6 +62,9 @@ export const updateConfig = async (patch: Partial<FoloCLIConfig>) => {
   }
   if (!next.apiUrl) {
     delete next.apiUrl
+  }
+  if (!next.theme) {
+    delete next.theme
   }
 
   await writeConfig(next)

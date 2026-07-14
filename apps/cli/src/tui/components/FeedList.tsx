@@ -2,6 +2,7 @@ import { Box, Text } from "ink"
 
 import { truncate } from "../format"
 import type { SidebarRow } from "../sidebar"
+import { useTheme } from "../theme"
 
 interface FeedListProps {
   rows: SidebarRow[]
@@ -33,6 +34,7 @@ export const FeedList = ({
   width,
   height,
 }: FeedListProps) => {
+  const theme = useTheme()
   // Keep the cursor in view within the available height.
   const visible = Math.max(1, height)
   const start = Math.min(
@@ -47,10 +49,11 @@ export const FeedList = ({
       width={width}
       height={height + 2}
       borderStyle="round"
-      borderColor={focused ? "cyan" : "gray"}
+      borderColor={focused ? theme.primary : theme.muted}
+      backgroundColor={theme.background}
       paddingX={1}
     >
-      <Text bold color={focused ? "cyan" : "gray"}>
+      <Text bold color={focused ? theme.primary : theme.muted}>
         Feeds
       </Text>
       {shown.map((row, offset) => {
@@ -64,7 +67,7 @@ export const FeedList = ({
           <Text
             key={index}
             wrap="truncate-end"
-            color={row.kind === "group" ? "yellow" : undefined}
+            color={row.kind === "group" ? theme.secondary : theme.text}
             bold={row.kind !== "feed"}
             inverse={isSelected && focused}
             dimColor={!focused && !isActive}

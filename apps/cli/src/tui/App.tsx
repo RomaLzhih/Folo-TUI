@@ -20,12 +20,16 @@ import { htmlToText, wrapText } from "./format"
 import { openUrl } from "./openUrl"
 import type { SidebarRow } from "./sidebar"
 import { buildSidebar, rowToQuery } from "./sidebar"
+import type { ThemeName } from "./theme"
+import { nextThemeName, ThemeProvider, themes, useTheme } from "./theme"
 import { useTerminalSize } from "./useTerminalSize"
 
 export type PaneName = "feeds" | "entries" | "reader"
 
 interface AppProps {
   client: FollowClient
+  initialTheme?: ThemeName
+  onThemeChange?: (name: ThemeName) => void
 }
 
 const clamp = (value: number, min: number, max: number): number =>
@@ -45,9 +49,12 @@ const errorMessage = (error: unknown): string => {
   return firstLine.length > 160 ? `${firstLine.slice(0, 159)}…` : firstLine
 }
 
-export const App = ({ client }: AppProps) => {
+export const App = ({ client, initialTheme = "dark", onThemeChange }: AppProps) => {
   const { exit } = useApp()
   const { columns, rows: termRows } = useTerminalSize()
+
+  const [themeName, setThemeName] = useState<ThemeName>(initialTheme)
+  const theme = themes[themeName]
 
   const [rows, setRows] = useState<SidebarRow[]>([])
   const [sidebarSel, setSidebarSel] = useState(0)
@@ -329,6 +336,14 @@ export const App = ({ client }: AppProps) => {
       return
     }
 
+    if (input === "c") {
+      const nextName = nextThemeName(themeName)
+      setThemeName(nextName)
+      onThemeChange?.(nextName)
+      setMessage(`Colorscheme: ${nextName}`)
+      return
+    }
+
     if (input === "t") {
       if (pane === "reader" && activeEntry) {
         toggleTranslate()
@@ -392,98 +407,113 @@ export const App = ({ client }: AppProps) => {
     }
   })
 
-  if (showHelp) {
-    return <HelpScreen height={paneHeight} />
-  }
-
   return (
-    // No fixed height: let the content size the box so total output stays
-    // below termRows and Ink can update in place instead of clearing.
-    <Box flexDirection="column">
-      <Box>
-        <FeedList
-          rows={rows}
-          selectedIndex={sidebarSel}
-          activeIndex={sidebarActive}
-          focused={pane === "feeds"}
-          width={sidebarWidth}
-          height={paneHeight}
-        />
-        <EntryList
-          entries={entries}
-          selectedIndex={entrySel}
-          focused={pane === "entries"}
-          loading={entriesLoading}
-          width={entryWidth}
-          height={paneHeight}
-        />
-        <Reader
-          entry={activeEntry}
-          lines={readerLines}
-          scroll={readerScroll}
-          loading={readerLoading}
-          fallback={readerFallback}
-          translated={translated}
-          translating={translationLoading}
-          summaryLines={summaryLines}
-          summaryLoading={summaryLoading}
-          focused={pane === "reader"}
-          width={readerWidth}
-          height={paneHeight}
-        />
-      </Box>
-      <StatusBar pane={pane} message={message} />
-    </Box>
+    // Provider so every pane reads the active colorscheme from context instead
+    // of prop-drilling `theme` through five components.
+    <ThemeProvider value={theme}>
+      {showHelp ? (
+        <HelpScreen height={paneHeight} />
+      ) : (
+        // No fixed height: let the content size the box so total output stays
+        // below termRows and Ink can update in place instead of clearing.
+        // width + backgroundColor paint the whole used area so the light theme
+        // fills behind the panes and the status row, not just their text.
+        <Box flexDirection="column" width={columns} backgroundColor={theme.background}>
+          <Box>
+            <FeedList
+              rows={rows}
+              selectedIndex={sidebarSel}
+              activeIndex={sidebarActive}
+              focused={pane === "feeds"}
+              width={sidebarWidth}
+              height={paneHeight}
+            />
+            <EntryList
+              entries={entries}
+              selectedIndex={entrySel}
+              focused={pane === "entries"}
+              loading={entriesLoading}
+              width={entryWidth}
+              height={paneHeight}
+            />
+            <Reader
+              entry={activeEntry}
+              lines={readerLines}
+              scroll={readerScroll}
+              loading={readerLoading}
+              fallback={readerFallback}
+              translated={translated}
+              translating={translationLoading}
+              summaryLines={summaryLines}
+              summaryLoading={summaryLoading}
+              focused={pane === "reader"}
+              width={readerWidth}
+              height={paneHeight}
+            />
+          </Box>
+          <StatusBar pane={pane} message={message} />
+        </Box>
+      )}
+    </ThemeProvider>
   )
 }
 
-const HelpScreen = ({ height }: { height: number }) => (
-  <Box
-    flexDirection="column"
-    height={height + 3}
-    borderStyle="round"
-    borderColor="cyan"
-    paddingX={2}
-    paddingY={1}
-  >
-    <Text bold color="cyan">
-      Folo TUI — keyboard shortcuts
-    </Text>
-    <Text> </Text>
-    <Text>
-      <Text color="yellow">↑ / ↓ , j / k</Text> Move within the focused pane
-    </Text>
-    <Text>
-      <Text color="yellow">Enter / → / l</Text> Open feed, then open entry to read
-    </Text>
-    <Text>
-      <Text color="yellow">← / h / Esc </Text> Go back to the previous pane
-    </Text>
-    <Text>
-      <Text color="yellow">Space / PgDn</Text> Page down in the reader
-    </Text>
-    <Text>
-      <Text color="yellow">- / PgUp </Text> Page up in the reader
-    </Text>
-    <Text>
-      <Text color="yellow">t </Text> Translate to Chinese (bilingual: original + 中文)
-    </Text>
-    <Text>
-      <Text color="yellow">o </Text> Open the post link in your default browser
-    </Text>
-    <Text>
-      <Text color="yellow">r </Text> Toggle read / unread
-    </Text>
-    <Text>
-      <Text color="yellow">R </Text> Refresh entries for the current feed
-    </Text>
-    <Text>
-      <Text color="yellow">? </Text> Toggle this help
-    </Text>
-    <Text>
-      <Text color="yellow">q / Ctrl+C </Text> Quit
-    </Text>
-    <Text> </Text>
-    <Text dimColor>Press any key to close.</Text>
-  </Box>
-)
+const HelpScreen = ({ height }: { height: number }) => {
+  const theme = useTheme()
+  return (
+    <Box
+      flexDirection="column"
+      height={height + 3}
+      borderStyle="round"
+      borderColor={theme.primary}
+      backgroundColor={theme.background}
+      paddingX={2}
+      paddingY={1}
+    >
+      <Text bold color={theme.primary}>
+        Folo TUI — keyboard shortcuts
+      </Text>
+      <Text> </Text>
+      <Text color={theme.text}>
+        <Text color={theme.secondary}>↑ / ↓ , j / k</Text> Move within the focused pane
+      </Text>
+      <Text color={theme.text}>
+        <Text color={theme.secondary}>Enter / → / l</Text> Open feed, then open entry to read
+      </Text>
+      <Text color={theme.text}>
+        <Text color={theme.secondary}>← / h / Esc </Text> Go back to the previous pane
+      </Text>
+      <Text color={theme.text}>
+        <Text color={theme.secondary}>Space / PgDn</Text> Page down in the reader
+      </Text>
+      <Text color={theme.text}>
+        <Text color={theme.secondary}>- / PgUp </Text> Page up in the reader
+      </Text>
+      <Text color={theme.text}>
+        <Text color={theme.secondary}>t </Text> Translate to Chinese (bilingual: original + 中文)
+      </Text>
+      <Text color={theme.text}>
+        <Text color={theme.secondary}>o </Text> Open the post link in your default browser
+      </Text>
+      <Text color={theme.text}>
+        <Text color={theme.secondary}>r </Text> Toggle read / unread
+      </Text>
+      <Text color={theme.text}>
+        <Text color={theme.secondary}>R </Text> Refresh entries for the current feed
+      </Text>
+      <Text color={theme.text}>
+        <Text color={theme.secondary}>c </Text> Toggle light / dark colorscheme
+      </Text>
+      <Text color={theme.text}>
+        <Text color={theme.secondary}>? </Text> Toggle this help
+      </Text>
+      <Text color={theme.text}>
+        <Text color={theme.secondary}>q / Ctrl+C </Text> Quit
+      </Text>
+      <Text> </Text>
+      <Text dimColor color={theme.text}>
+        Press any key to close.
+      </Text>
+    </Box>
+  )
+}
