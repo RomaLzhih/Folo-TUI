@@ -54,7 +54,41 @@ needed. Launch it with `folo tui`:
 - **Switchable light/dark colorscheme** — toggle with `c`; the choice is remembered across sessions.
 - **Open in browser** — jump to the original post with `o`.
 
-See [`apps/cli`](./apps/cli) for build and usage details.
+### Get, build & use
+
+Requirements: **Node ≥ 22** and **[pnpm](https://pnpm.io)** (this repo uses `pnpm@10`).
+
+```bash
+# 1. Get the code
+git clone https://github.com/RomaLzhih/Folo-TUI.git
+cd Folo-TUI
+
+# 2. Install workspace dependencies (from the repo root)
+pnpm install
+
+# 3. Compile the CLI (outputs to apps/cli/dist)
+pnpm --filter folocli build
+```
+
+Then sign in and launch the reader:
+
+```bash
+# Sign in via browser — or `login --token <token>`, or set FOLO_TOKEN
+node apps/cli/dist/index.js login
+
+# Open the interactive reader
+node apps/cli/dist/index.js tui
+```
+
+Tip: alias it for convenience — `alias folo="node $PWD/apps/cli/dist/index.js"` —
+then just run `folo tui`. During development you can skip the build and run from
+source with `pnpm --filter folocli dev tui`.
+
+**Keys:** `↑↓`/`jk` move · `Enter`/`→` open · `←`/`Esc` back · `Space`/`-` page ·
+`t` translate · `o` open in browser · `r` toggle read · `R` refresh · `c`
+colorscheme · `?` help · `q` quit.
+
+See [`apps/cli`](./apps/cli) and its `CLAUDE.md` for more detail.
 
 > [!IMPORTANT]
 > **Reading only.** The TUI covers browsing and reading posts — it does **not**
