@@ -34,6 +34,41 @@
   </p>
 </div>
 
+> [!NOTE]
+> **This is a fork of [RSSNext/Folo](https://github.com/RSSNext/Folo).** It adds an
+> interactive terminal (TUI) reader to the Folo CLI (`folocli`, `folo` binary).
+> Everything below the divider is the upstream project's original documentation,
+> unchanged.
+
+## 🖥️ What this fork adds
+
+A keyboard-driven terminal reader for your feeds — no browser or desktop app
+needed. Launch it with `folo tui`:
+
+- **Three-pane reader** — feeds/groups → entries → article view, entirely in the terminal.
+- **In-place reading** — open posts and read them without leaving the terminal; page with `Space` / `-`, scroll with `↑↓` / `jk`.
+- **AI summary** — a Chinese AI summary pinned to the top of each article.
+- **Bilingual translation** — translate a post to Chinese (original + 中文) with `t`.
+- **Auto-read while browsing** — entries mark themselves read as the cursor moves past them.
+- **Refresh & sort** — refresh a feed with `R`, floating unread entries to the top.
+- **Switchable light/dark colorscheme** — toggle with `c`; the choice is remembered across sessions.
+- **Open in browser** — jump to the original post with `o`.
+
+See [`apps/cli`](./apps/cli) for build and usage details.
+
+> [!IMPORTANT]
+> **Reading only.** The TUI covers browsing and reading posts — it does **not**
+> implement the full Folo feature set (managing subscriptions, actions/automation,
+> lists, boosting, payments, social/discovery, etc.). Use the web, desktop, or
+> mobile apps for everything beyond reading.
+
+> **Disclaimer.** The features above — the `folo tui` reader and all of its
+> supporting code — were generated entirely by an AI coding agent (Claude Code /
+> Claude Opus), not hand-authored. The code is provided as-is, with **no
+> guarantee of security and no warranty** of any kind. Use at your own risk.
+
+---
+
 As they say, your thoughts are what you read—and we’ve been consuming noisy feeds for too long! Folo organizes content into one timeline, keeping you updated on what matters, noise-free. Share lists, explore collections, and enjoy distraction-free browsing.
 
 ## 👋🏻 Getting Started & Join Our Community
